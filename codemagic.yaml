@@ -14,6 +14,24 @@ workflows:
           PERMISSIONS='    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\n    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>\n'
           awk -v perms="$PERMISSIONS" '{print} /<manifest/{print perms}' "$MANIFEST" > tmp_manifest && mv tmp_manifest "$MANIFEST"
           cat "$MANIFEST"
+      - name: Bump compileSdk/targetSdk (file_picker needs SDK 36+)
+        script: |
+          if [ -f android/app/build.gradle.kts ]; then
+            echo "--- BEFORE PATCH (build.gradle.kts) ---"
+            grep -n "compileSdk\|targetSdk" android/app/build.gradle.kts
+            perl -pi -e 's/^(\s*compileSdk\s*=\s*).*$/${1}36/' android/app/build.gradle.kts
+            perl -pi -e 's/^(\s*targetSdk\s*=\s*).*$/${1}36/' android/app/build.gradle.kts
+            echo "--- AFTER PATCH (build.gradle.kts) ---"
+            grep -n "compileSdk\|targetSdk" android/app/build.gradle.kts
+          fi
+          if [ -f android/app/build.gradle ]; then
+            echo "--- BEFORE PATCH (build.gradle) ---"
+            grep -n "compileSdkVersion\|targetSdkVersion" android/app/build.gradle
+            perl -pi -e 's/^(\s*compileSdkVersion\s+).*$/${1}36/' android/app/build.gradle
+            perl -pi -e 's/^(\s*targetSdkVersion\s+).*$/${1}36/' android/app/build.gradle
+            echo "--- AFTER PATCH (build.gradle) ---"
+            grep -n "compileSdkVersion\|targetSdkVersion" android/app/build.gradle
+          fi
       - name: Get Flutter packages
         script: |
           flutter pub get
